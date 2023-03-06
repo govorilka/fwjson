@@ -24,11 +24,13 @@ enum CharType
 	C_Num,    //Numbers (0..9)
 	C_Fra,    //Decimal point (.)
 	C_Sig,    //Char '+' and '-'
+	C_Ast,    //Asterisk(*)
 
 	C_Sp,     //Space (' ')
 
 	C_Str,    //Quotation mark (")
 	C_Bsl,    //Backslash (\)
+	C_Slh,    //Slash (/)
 
 	//These are the six structural characters
 	C_Col,    //Name separator, colon (:)
@@ -54,7 +56,7 @@ const CharType chars_type[128] = {
 /* 24 */  C_Err, C_Err, C_Err, C_Err, C_Err, C_Err, C_Err, C_Err,
 
 /* 32 */  C_Sp,  C_Uni, C_Str, C_Uni, C_Uni, C_Uni, C_Uni, C_Uni,
-/* 40 */  C_Uni, C_Uni, C_Uni, C_Sig, C_Sep, C_Sig, C_Fra, C_Uni,
+/* 40 */  C_Uni, C_Uni, C_Ast, C_Sig, C_Sep, C_Sig, C_Fra, C_Slh,
 /* 48 */  C_Num, C_Num, C_Num, C_Num, C_Num, C_Num, C_Num, C_Num,
 /* 56 */  C_Num, C_Num, C_Col, C_Sep, C_Uni, C_Uni, C_Uni, C_Uni,
 
@@ -94,6 +96,8 @@ void x_ign(char c, ParseData* data);
 void x_ar1(char c, ParseData* data);
 void x_ar2(char c, ParseData* data);
 void x_ear(char c, ParseData* data);
+void x_com(char c, ParseData* data);
+
 /*void x_val(ParseData* data);
 
 void x_est(ParseData* data);
@@ -115,63 +119,51 @@ enum
 	X_SEO,
 	X_SEA,
 	X_EAT,
+	X_SLC,
+	X_MLC,
 
 	X_MAX
 };
 
 //Parse command or parse state
 const CommandFunc parse_commands[X_MAX][C_MAX] = {
-/*			C_AZ,   C_Ee,  C_Uni,  C_Num,  C_Fra, C_Sig,	C_Sp,  C_Str,  C_Bsl,  C_Col,			C_LCu,  C_RCu,  C_LSq,  C_RSq,  C_Sep,  C_Err */
-/*X_DOC*/{  &x_var, &x_var, &x_err, &x_err, &x_err, &x_err, &x_ign, &x_bst, &x_err, &x_err, /*X_DOC*/ &x_doc, &x_err, &x_err, &x_err, &x_err, &x_err  },
-/*X_VAR*/{	   0,	  0, &x_err,	  0, &x_err, &x_err, &x_est, &x_err, &x_err, &x_atr, /*X_VAR*/ &x_ob2, &x_eob, &x_ar2, &x_ear, &x_val, &x_err  },
-/*X_STR*/{	   0,	  0,	  0,	  0,	  0,	  0,	  0, &x_est, &x_bsc,	  0, /*X_STR*/	  0,	  0,	  0,	  0,	  0, &x_err  },
-/*X_SCH*/{  &x_esc, &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, &x_esc, &x_esc, &x_err, /*X_STR*/ &x_err, &x_err, &x_err, &x_err, &x_err, &x_err  },
-/*X_VAL*/{  &x_var, &x_var, &x_err, &x_int, &x_err, &x_sg1, &x_ign, &x_bst, &x_err, &x_err, /*X_VAL*/ &x_ob1, &x_err, &x_ar1, &x_ear, &x_val, &x_err  },
-/*X_INT*/{  &x_err, &x_re2, &x_err,   0, &x_re1, &x_err, &x_enu, &x_err, &x_err, &x_err, /*X_INT*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
-/*X_RE1*/{  &x_err, &x_re2, &x_err,	  0, &x_err, &x_err, &x_enu, &x_err, &x_err, &x_err, /*X_RE1*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
-/*X_RE2*/{  &x_err, &x_err, &x_err, &x_rn3, &x_err, &x_rn3, &x_err, &x_err, &x_err, &x_err, /*X_RE2*/ &x_err, &x_err, &x_err, &x_err, &x_err, &x_err  },
-/*X_RE3*/{  &x_err, &x_err, &x_err,	  0, &x_err, &x_err, &x_enu, &x_err, &x_err, &x_err, /*X_RE3*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
-/*X_ATR*/{  &x_var, &x_var, &x_err, &x_err, &x_err, &x_err, &x_ign, &x_bst, &x_err, &x_err, /*X_ATR*/ &x_err, &x_eob, &x_err, &x_err, &x_err, &x_err  },
-/*X_SEO*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, &x_ign, &x_err, &x_err, &x_err, /*X_SEO*/ &x_err, &x_eob, &x_err, &x_err, &x_val, &x_err  },
-/*X_SEA*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, &x_ign, &x_err, &x_err, &x_err, /*X_SEA*/ &x_err, &x_err, &x_err, &x_ear, &x_val, &x_err  },
-/*X_EAT*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, &x_ign, &x_err, &x_err, &x_atr, /*X_EAT*/ &x_ob2, &x_err, &x_ar2, &x_err, &x_err, &x_err  },
+/*          C_AZ,   C_Ee,   C_Uni,  C_Num,  C_Fra,  C_Sig,  C_Ast,  C_Sp,   C_Str,  C_Bsl,  C_Slh,  C_Col,            C_LCu,  C_RCu,  C_LSq,  C_RSq,  C_Sep,  C_Err */
+/*X_DOC*/{  &x_var, &x_var, &x_err, &x_err, &x_err, &x_err, &x_com, &x_ign, &x_bst, &x_err, &x_com, &x_err, /*X_DOC*/ &x_doc, &x_err, &x_err, &x_err, &x_err, &x_err  },
+/*X_VAR*/{  0,      0,      &x_err, 0,      &x_err, &x_err, 0,      &x_est, &x_err, &x_err, 0,      &x_atr, /*X_VAR*/ &x_ob2, &x_eob, &x_ar2, &x_ear, &x_val, &x_err  },
+/*X_STR*/{  0,      0,      0,      0,      0,      0,      0,      0,      &x_est, &x_bsc, 0,      0,      /*X_STR*/ 0,      0,      0,      0,      0,      &x_err  },
+/*X_SCH*/{  &x_esc, &x_err, &x_err, &x_err, &x_err, &x_err, 0,      &x_err, &x_esc, &x_esc, 0,      &x_err, /*X_STR*/ &x_err, &x_err, &x_err, &x_err, &x_err, &x_err  },
+/*X_VAL*/{  &x_var, &x_var, &x_err, &x_int, &x_err, &x_sg1, &x_com, &x_ign, &x_bst, &x_err, &x_com, &x_err, /*X_VAL*/ &x_ob1, &x_err, &x_ar1, &x_ear, &x_val, &x_err  },
+/*X_INT*/{  &x_err, &x_re2, &x_err, 0,      &x_re1, &x_err, 0,      &x_enu, &x_err, &x_err, 0,      &x_err, /*X_INT*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
+/*X_RE1*/{  &x_err, &x_re2, &x_err, 0,      &x_err, &x_err, 0,      &x_enu, &x_err, &x_err, 0,      &x_err, /*X_RE1*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
+/*X_RE2*/{  &x_err, &x_err, &x_err, &x_rn3, &x_err, &x_rn3, 0,      &x_err, &x_err, &x_err, 0,      &x_err, /*X_RE2*/ &x_err, &x_err, &x_err, &x_err, &x_err, &x_err  },
+/*X_RE3*/{  &x_err, &x_err, &x_err, 0,      &x_err, &x_err, 0,      &x_enu, &x_err, &x_err, 0,      &x_err, /*X_RE3*/ &x_err, &x_eob, &x_err, &x_ear, &x_val, &x_err  },
+/*X_ATR*/{  &x_var, &x_var, &x_err, &x_err, &x_err, &x_err, &x_com, &x_ign, &x_bst, &x_err, &x_com, &x_err, /*X_ATR*/ &x_err, &x_eob, &x_err, &x_err, &x_err, &x_err  },
+/*X_SEO*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, &x_com, &x_ign, &x_err, &x_err, &x_com, &x_err, /*X_SEO*/ &x_err, &x_eob, &x_err, &x_err, &x_val, &x_err  },
+/*X_SEA*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, 0,      &x_ign, &x_err, &x_err, 0,      &x_err, /*X_SEA*/ &x_err, &x_err, &x_err, &x_ear, &x_val, &x_err  },
+/*X_EAT*/{  &x_err, &x_err, &x_err, &x_err, &x_err, &x_err, 0,      &x_ign, &x_err, &x_err, 0,      &x_atr, /*X_EAT*/ &x_ob2, &x_err, &x_ar2, &x_err, &x_err, &x_err  },
+/*X_SLC*/{  &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, /*X_EAT*/ &x_com, &x_com, &x_com, &x_com, &x_com, &x_err  },
+/*X_SLC*/{  &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, &x_com, /*X_EAT*/ &x_com, &x_com, &x_com, &x_com, &x_com, &x_err  },
 };
 
 struct ParseData
 {
-	ParseData();
-
 	inline void setupAttributeName();
 	inline void structureUp();
 	void setupValue();
 	inline void setupAttributeValue();
 	inline void setupArrayValue();
 
-	Node* parent;
+	Node* parent = nullptr;
 	std::string attribute;
-	bool specialChar;
 	std::string buffer;
-	bool isVariable;
-	int xcmd;
-	int line;
-	int column;
-	std::uint32_t uintNumber;
-	bool declareRoot;
-	Type type;
+	bool isVariable = false;
+	int xcmd = X_DOC;
+	int xcmdRestore = 0;
+	int line = 0;
+	int lineSize = 0;
+	int column = 0;
+	Type type = Type::Null;
 };
-
-ParseData::ParseData() :
-	parent(0),
-	specialChar(false),
-	isVariable(false),
-	xcmd(X_DOC),
-	line(0),
-	column(0),
-	uintNumber(0),
-	declareRoot(false),
-	type(Type::Null)
-{
-}
 
 void ParseData::setupAttributeName()
 {
@@ -339,7 +331,6 @@ void ParseData::setupArrayValue()
 void x_doc(char c, ParseData* data)
 {
 	data->xcmd = X_ATR;
-	data->declareRoot = true;
 }
 
 void x_var(char c, ParseData* data)
@@ -557,13 +548,46 @@ void x_val(char c, ParseData* data)
 	throw Exception(c, data->line, data->column);
 }
 
+void x_com(char c, ParseData* data)
+{
+	if (data->buffer.ends_with("/")) {
+		if (c == '/' && data->xcmd != X_SLC) {
+			data->buffer += c;
+			data->xcmdRestore = data->xcmd;
+			data->xcmd = X_SLC;
+			return;
+		}
+		if (c == '*' && data->xcmd != X_MLC) {
+			data->buffer += c;
+			data->xcmdRestore = data->xcmd;
+			data->xcmd = X_MLC;
+			return;
+		}
+	}
+
+	if (data->xcmd == X_SLC) {
+		if (data->column == data->lineSize - 1) {
+			data->xcmd = data->xcmdRestore;
+			data->xcmdRestore = 0;
+			data->buffer.clear();
+			return;
+		}
+	} else if (data->xcmd == X_MLC) {
+		if (c == '/' && data->buffer.ends_with('*')) {
+			data->xcmd = data->xcmdRestore;
+			data->xcmdRestore = 0;
+			data->buffer.clear();
+			return;
+		}
+	}
+
+	data->buffer += c;
+}
+
 void x_ign(char, ParseData*)
 {}
 
 } // namespace
-
-Node::Node()
-{}
 
 Node::~Node()
 {
@@ -645,29 +669,12 @@ std::string String::toJson() const
 
 int String::toInt(bool* bOk) const
 {
-	if (bOk) {
-		size_t index = 0;
-		auto result = std::stoi(value(), &index);
-		if (index != value().size()) {
-			*bOk = false;
-		}
-		return result;
-	}
-	return std::stoi(value());
+    return strings::toInt32(value(), bOk);
 }
 
 std::uint32_t String::toUint(bool* bOk) const
 {
-	// if(!value().empty())
-	// {
-	//	 if(value().at(0) == '#')
-	//	 {
-	//		 return value().right(value().length() - 1).toUInt(bOk, 16);
-	//	 }
-	//	 return value().toUInt(bOk);
-	// }
-	// (*bOk) = false;
-	return 0;
+    return strings::toUint32(value(), bOk);
 }
 
 bool String::toBool(bool* bOk) const
@@ -677,15 +684,7 @@ bool String::toBool(bool* bOk) const
 
 double String::toNumber(bool* bOk) const
 {
-	if (bOk) {
-		size_t index = 0;
-		auto result = std::stod(value(), &index);
-		if (index != value().size()) {
-			*bOk = false;
-		}
-		return result;
-	}
-	return std::stod(value());
+    return strings::toDouble(value(), bOk);
 }
 
 std::string String::toString(bool* bOk) const
@@ -974,8 +973,7 @@ void Object::parse(const std::string& utf8String)
 	if (utf8String.empty()) {
 		throw Exception("Input string is empty");
 	}
-	std::string tmpStr = utf8String;
-	std::istringstream stream(tmpStr);
+	std::istringstream stream(utf8String);
 	parseStream(stream);
 }
 
@@ -990,19 +988,16 @@ void Object::parseStream(std::istream& stream)
 		while (std::getline(stream, line)) {
 			++data.line;
 			data.column = 0;
-			//std::string line = ioDevice->readLine().trimmed();
-			if(!line.empty()) {
-				int line_size = line.size();
-				char* c_ptr = line.data();
-				for(;data.column < line_size; data.column++, c_ptr++) {
-					auto nextChar = static_cast<std::uint8_t>(*c_ptr);
+			data.lineSize = line.size();
 
-					CharType charType = nextChar > 0 ? chars_type[nextChar] : C_Uni;
-					if(CommandFunc cmd = parse_commands[data.xcmd][charType]) {
-						cmd((*c_ptr), &data);
-					} else {
-						data.buffer += (*c_ptr);
-					}
+			for(char* c_ptr = line.data(); data.column < data.lineSize; data.column++, c_ptr++) {
+				auto nextChar = static_cast<std::int8_t>(*c_ptr);
+				CharType charType = nextChar > 0 ? chars_type[nextChar] : C_Uni;
+
+				if (CommandFunc cmd = parse_commands[data.xcmd][charType]) {
+					cmd((*c_ptr), &data);
+				} else {
+					data.buffer += (*c_ptr);
 				}
 			}
 		}
